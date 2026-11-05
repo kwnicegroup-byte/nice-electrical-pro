@@ -100,7 +100,7 @@ ms:{
 }};
 function applyLanguage(lang){
  const d=dict[lang]||dict.en, extra=extraText[lang]||{};
- document.querySelectorAll('[data-t]').forEach(el=>{const k=el.dataset.t;if(d[k])el.textContent=d[k]});
+ document.querySelectorAll('[data-t]').forEach(el=>{const k=el.dataset.t;if(d[k]&&el.textContent!==d[k])el.textContent=d[k]});
  const map=Object.entries(extra).sort((a,b)=>b[0].length-a[0].length);
  const walk=root=>{const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode()){let s=n.nodeValue;for(const [a,b] of map)if(s.includes(a))s=s.split(a).join(b);n.nodeValue=s;}};
  walk(document.body);
