@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#142943"><title>NICE ELECTRICAL PRO - 本地资料安全检查</title>
+<style>
+*{box-sizing:border-box}body{margin:0;padding:20px;background:#f3f6fa;color:#1d2b3d;font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}.wrap{max-width:650px;margin:0 auto}.card{background:#fff;border:1px solid #e1e7ef;border-radius:16px;padding:20px;margin:14px 0;box-shadow:0 5px 20px #1529430b}h1{font-size:22px;margin:0 0 6px;color:#142943}h2{font-size:17px;margin:0 0 10px}.muted{color:#68788c;font-size:14px}.warning{background:#fff6e5;border:1px solid #f0d69c;color:#744f13;padding:13px;border-radius:10px}.status{padding:12px;border-radius:10px;background:#f2f6fb;margin:10px 0;overflow-wrap:anywhere}.ok{color:#087443;font-weight:700}.bad{color:#b42318;font-weight:700}button{width:100%;border:0;border-radius:10px;padding:14px 16px;background:#246fc0;color:#fff;font-size:16px;font-weight:700;margin-top:10px}button:disabled{opacity:.45}ul{padding-left:22px}code{background:#eef2f7;padding:2px 5px;border-radius:5px}
+</style></head>
+<body><main class="wrap">
+<div class="card"><h1>NICE ELECTRICAL PRO</h1><div class="muted">本地报价单只读检查与备份</div></div>
+<div class="warning"><b>安全说明：</b>此页面只读取当前浏览器此网站的本地储存，不会修改、删除、上传或同步任何资料。请勿卸载旧 APP 或清除网站资料。</div>
+<div class="card"><h2>检查结果</h2><div id="origin" class="muted"></div><div id="docs" class="status">正在只读检查…</div><div id="catalogue" class="status"></div><div id="other" class="status"></div><button id="backup" disabled>导出本地资料备份（JSON）</button><p id="result" class="muted">备份文件只会下载到你的手机，不会发送给任何人。</p></div>
+<div class="card"><h2>请注意</h2><ul><li>如果找到报价单，请先下载备份文件，并保留原 APP。</li><li>如果显示 0 份，不代表资料已被删除；可能 Chrome 与桌面安装版没有读取到同一份储存空间。</li><li>如果显示读取错误，请停止操作并把画面截图发来。</li></ul></div>
+<script>
+(function(){
+ const $=id=>document.getElementById(id);
+ $('origin').textContent='网站来源：'+location.origin;
+ let backupData=null;
+ try{
+   const docsRaw=localStorage.getItem('nep_docs');
+   const catRaw=localStorage.getItem('nep_catalogue');
+   let docs=null,cat=null,errors=[];
+   try{docs=docsRaw===null?null:JSON.parse(docsRaw)}catch(e){errors.push('nep_docs JSON 读取格式异常')}
+   try{cat=catRaw===null?null:JSON.parse(catRaw)}catch(e){errors.push('nep_catalogue JSON 读取格式异常')}
+   const count=Array.isArray(docs)?docs.length:(docs&&typeof docs==='object'?Object.keys(docs).length:0);
+   $('docs').innerHTML='<b>报价单资料（nep_docs）：</b> '+(docsRaw===null?'<span class="bad">当前来源未找到此资料</span>':'<span class="ok">已找到储存内容</span>')+'<br>识别记录数量：'+count;
+   $('catalogue').innerHTML='<b>材料目录（nep_catalogue）：</b> '+(catRaw===null?'<span class="bad">当前来源未找到</span>':'<span class="ok">已找到储存内容</span>');
+   const keys=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k)keys.push(k)}
+   $('other').textContent='当前来源可见的本地储存项目数：'+keys.length+(errors.length?'；注意：'+errors.join('；'):'');
+   backupData={backup_type:'NICE ELECTRICAL PRO local read-only backup',created_at:new Date().toISOString(),origin:location.origin,source_note:'Read-only export. No data was changed or uploaded.',local_storage:{nep_docs:docsRaw,nep_catalogue:catRaw},visible_local_storage_keys:keys};
+   $('backup').disabled=!(docsRaw!==null||catRaw!==null||keys.length>0);
+   $('backup').addEventListener('click',function(){
+     if(!backupData)return;
+     const blob=new Blob([JSON.stringify(backupData,null,2)],{type:'application/json'});
+     const url=URL.createObjectURL(blob),a=document.createElement('a');
+     a.href=url;a.download='NICE_ELECTRICAL_PRO_LOCAL_BACKUP_'+new Date().toISOString().replace(/[:.]/g,'-')+'.json';
+     document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);
+     $('result').innerHTML='<span class="ok">已发起备份下载。</span> 请到手机「下载」文件夹确认 JSON 文件存在。';
+   });
+ }catch(e){
+   $('docs').innerHTML='<span class="bad">无法读取本地储存：</span>'+String(e);
+   $('catalogue').textContent='没有对资料作任何修改。';
+   $('other').textContent='请停止操作并截图。';
+ }
+})();
+</script></main></body></html>
