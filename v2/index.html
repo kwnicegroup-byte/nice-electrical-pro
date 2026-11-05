@@ -55,7 +55,7 @@ function openDocument(q,type){docType=type;editing=q.id;$('qNo').value=q.no;$('q
 function renderInvoices(){const el=$('invoiceList');if(!state.invoices.length){el.className='empty';el.textContent='No invoices yet.';return}el.className='';el.innerHTML=state.invoices.slice().reverse().map(x=>'<div class="totalrow"><span><b>'+safe(x.no)+'</b> · '+safe(x.customer)+'<br><small class="muted">'+safe(x.date)+'</small></span><b>'+money(x.total)+'</b><button class="btn secondary" data-invoice-edit="'+safe(x.id)+'">Open</button></div>').join('')}
 $('invoiceList').onclick=e=>{const b=e.target.closest('[data-invoice-edit]');if(!b)return;const q=state.invoices.find(x=>x.id===b.dataset.invoiceEdit);if(q)openDocument(q,'invoice')};
 function renderCustomers(){$('customerList').innerHTML=state.customers.length?state.customers.map(x=>'<div class="totalrow">'+safe(x.name)+' <span class="muted">'+safe(x.phone)+'</span></div>').join(''):'No customers yet.'}
-$('addMaterial').onclick=()=>{const name=$('materialNew').value.trim();if(!name)return alert('Enter material description.');state.materials.push({name,unit:$('materialUnit').value,buy:Number($('materialBuy').value)||0,sell:Number($('materialSell').value)||0});$('materialNew').value='';$('materialBuy').value='';$('materialSell').value='';persist();renderMaterials()};
+$('addMaterial').onclick=()=>{const name=$('materialNew').value.trim();if(!name)return alert('Enter material description.');const buy=Number($('materialBuy').value)||0,sell=Number($('materialSell').value)||0;state.materials.push({name,unit:$('materialUnit').value,buy,sell,pricePending:!(buy||sell),priceStatus:(buy||sell)?'已手动输入':'待核价',priceSource:'手动输入'});$('materialNew').value='';$('materialBuy').value='';$('materialSell').value='';persist();renderMaterials()};
 const starterMaterials=[
 ['PVC Cable 1.5mm²','m'],['PVC Cable 2.5mm²','m'],['PVC Cable 4mm²','m'],['PVC Cable 6mm²','m'],['PVC Cable 10mm²','m'],['PVC Cable 16mm²','m'],['PVC Cable 25mm²','m'],['PVC Cable 35mm²','m'],['PVC Cable 50mm²','m'],['PVC Cable 70mm²','m'],['PVC Cable 95mm²','m'],
 ['XLPE/SWA/PVC Cable 4C x 2.5mm²','m'],['XLPE/SWA/PVC Cable 4C x 4mm²','m'],['XLPE/SWA/PVC Cable 4C x 6mm²','m'],['XLPE/SWA/PVC Cable 4C x 10mm²','m'],['XLPE/SWA/PVC Cable 4C x 16mm²','m'],['XLPE/SWA/PVC Cable 4C x 25mm²','m'],['XLPE/SWA/PVC Cable 4C x 35mm²','m'],['XLPE/SWA/PVC Cable 4C x 50mm²','m'],
@@ -67,8 +67,41 @@ const starterMaterials=[
 ['13A Socket Outlet','pc'],['20A DP Switch','pc'],['1 Gang 1 Way Switch','pc'],['2 Gang 1 Way Switch','pc'],['Isolator 20A DP','pc'],['Isolator 40A TP','pc'],
 ['Earthing Cable 16mm²','m'],['Earth Rod 5/8 inch','pc'],['Earth Clamp','pc'],['Cable Gland','pc'],['Cable Lug','pc'],['Junction Box','pc'],['GI Box 2x4','pc'],['GI Box 4x4','pc'],['PVC Box 2x4','pc']
 ];
-function ensureStarterMaterials(){if(!Array.isArray(state.materials))state.materials=[];if(state.materials.length)return;state.materials=starterMaterials.map(([name,unit])=>({name,unit,buy:0,sell:0,pricePending:true}));persist()}
-function renderMaterials(){$('materialList').innerHTML=state.materials.length?state.materials.map(x=>'<div class="totalrow"><span>'+safe(x.name)+' <small class="muted">('+safe(x.unit)+')</small></span><b>'+(x.pricePending?'Price not set':money(x.sell))+'</b></div>').join(''):'No materials yet.';renderMaterialPicker()}
+const publicReferencePrices={
+'PVC Cable 1.5mm²':{buy:0.995,source:'MEGA 1.5mm² 100m roll RM93–106; per metre'},
+'PVC Cable 2.5mm²':{buy:1.69,source:'MEGA 2.5mm² 100m roll RM169; per metre'},
+'PVC Cable 4mm²':{buy:4.90,source:'MEGA single-core catalogue RM4.80–5.00/m'},
+'PVC Cable 6mm²':{buy:7.30,source:'MEGA single-core catalogue RM7.20–7.40/m'},
+'PVC Cable 10mm²':{buy:12.00,source:'MEGA single-core catalogue RM12.00/m'},
+'PVC Cable 16mm²':{buy:18.90,source:'MEGA single-core catalogue RM18.90/m'},
+'PVC Cable 25mm²':{buy:29.70,source:'MEGA single-core catalogue RM29.70/m'},
+'PVC Cable 35mm²':{buy:41.10,source:'MEGA single-core catalogue RM41.10/m'},
+'PVC Cable 50mm²':{buy:55.80,source:'MEGA single-core catalogue RM55.80/m'},
+'PVC Cable 70mm²':{buy:80.60,source:'MEGA single-core catalogue RM80.60/m'},
+'13A Socket Outlet':{buy:4.75,source:'UMS public retail RM4.50–5.00/pc'},
+'1 Gang 1 Way Switch':{buy:4.30,source:'ERA public retail RM4.30/pc'},
+'MCB SP 16A':{buy:7.40,source:'EPS SP MCB public retail RM7.40/pc'}
+};
+function ensureStarterMaterials(){
+ if(!Array.isArray(state.materials))state.materials=[];
+ starterMaterials.forEach(([name,unit])=>{
+  let m=state.materials.find(x=>String(x.name).toLowerCase()===name.toLowerCase());
+  if(!m){m={name,unit,buy:0,sell:0,pricePending:true,priceStatus:'待核价'};state.materials.push(m)}
+  const ref=publicReferencePrices[name];
+  if(ref&&(!Number(m.buy)||m.pricePending)){m.buy=ref.buy;m.sell=Number((ref.buy/0.8).toFixed(2));m.pricePending=true;m.priceStatus='暂定价';m.priceSource=ref.source;m.marginTarget=20}
+  else if(!Number(m.buy)||!Number(m.sell)){m.pricePending=true;m.priceStatus=m.priceStatus||'待核价'}
+ });
+ persist();
+}
+function renderMaterials(){
+ $('materialList').innerHTML=state.materials.length?'<div class="notice">公开市场参考价仅供估算，不是已确认供应商报价。建议销售价按20%毛利率计算。你可以自行修改成本价及销售价。</div>'+state.materials.map((x,i)=>'<div class="card"><b>'+safe(x.name)+'</b> <small class="muted">('+safe(x.unit)+')</small><div class="formgrid"><div class="field"><label>成本价 / Purchase cost (RM)</label><input type="number" min="0" step="0.01" id="matBuy_'+i+'" value="'+(Number(x.buy)||0).toFixed(2)+'"></div><div class="field"><label>销售价 / Selling price (RM)</label><input type="number" min="0" step="0.01" id="matSell_'+i+'" value="'+(Number(x.sell)||0).toFixed(2)+'"></div></div><small class="muted">'+safe(x.priceStatus||(x.pricePending?'待核价':'已编辑'))+(x.priceSource?' · '+safe(x.priceSource):'')+'</small><div class="actions"><button class="btn secondary" data-material-save="'+i+'">保存价格</button><button class="btn danger" data-material-delete="'+i+'">删除</button></div></div>').join(''):'No materials yet.';
+ renderMaterialPicker();
+}
+$('materialList').onclick=e=>{
+ const save=e.target.closest('[data-material-save]'),del=e.target.closest('[data-material-delete]');
+ if(save){const i=Number(save.dataset.materialSave),m=state.materials[i];if(!m)return;const buy=Number($('matBuy_'+i).value),sell=Number($('matSell_'+i).value);if(!Number.isFinite(buy)||buy<0||!Number.isFinite(sell)||sell<0)return alert('请检查成本价和销售价。');m.buy=buy;m.sell=sell;m.pricePending=false;m.priceStatus='已由老板确认';m.priceSource='手动修改';persist();renderMaterials();alert('材料价格已保存。')}
+ if(del){const i=Number(del.dataset.materialDelete);if(!state.materials[i])return;if(!confirm('确定删除这项材料？'))return;state.materials.splice(i,1);persist();renderMaterials()}
+};
 function renderMaterialPicker(){const el=$('materialPicker');if(!el)return;const keep=el.value;el.innerHTML='<option value="">Choose material from library</option>'+state.materials.map((x,i)=>'<option value="'+i+'">'+safe(x.name)+' - '+safe(x.unit)+' - '+money(x.sell)+'</option>').join('');if(keep!=='')el.value=keep}
 $('addMaterialToDoc').onclick=()=>{const i=$('materialPicker').value;if(i==='')return alert('Please choose a material first.');const m=state.materials[Number(i)];if(!m)return;items.push({description:m.name,qty:1,unit:m.unit||'unit',price:Number(m.sell)||0,cost:Number(m.buy)||0});renderItems();calc();$('materialPicker').value=''};
 $('exportData').onclick=()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='nice-electrical-pro-v2-backup.json';a.click();URL.revokeObjectURL(a.href)};
@@ -126,7 +159,7 @@ $('addSupplier').onclick=()=>{const name=$('supplierNew').value.trim();if(!name)
 $('addEmployee').onclick=()=>{const name=$('employeeNew').value.trim();if(!name)return alert('Enter employee name.');state.employees.push({name,wage:Number($('employeeWage').value)||0});persist();renderContacts();$('employeeNew').value='';$('employeeWage').value=''};
 function renderContacts(){$('supplierList').innerHTML=state.suppliers.length?state.suppliers.map(x=>'<div class="totalrow">'+safe(x.name)+' <span>'+safe(x.phone)+'</span></div>').join(''):'No suppliers yet.';$('employeeList').innerHTML=state.employees.length?state.employees.map(x=>'<div class="totalrow">'+safe(x.name)+' <span>'+money(x.wage)+'/day</span></div>').join(''):'No employees yet.'}
 
-renderDashboard();renderInvoices();renderItems();$('qNo').value=nextNo();$('qDate').value=new Date().toISOString().slice(0,10);$('rNo').value=seq('RC',state.receipts);$('rDate').value=new Date().toISOString().slice(0,10);$('pNo').value=seq('PO',state.purchaseOrders);$('pDate').value=new Date().toISOString().slice(0,10);
+ensureStarterMaterials();renderMaterials();renderDashboard();renderInvoices();renderItems();$('qNo').value=nextNo();$('qDate').value=new Date().toISOString().slice(0,10);$('rNo').value=seq('RC',state.receipts);$('rDate').value=new Date().toISOString().slice(0,10);$('pNo').value=seq('PO',state.purchaseOrders);$('pDate').value=new Date().toISOString().slice(0,10);
 if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 })();
 applyLanguage('en');
