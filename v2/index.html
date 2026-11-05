@@ -138,20 +138,22 @@ ms:{
 'Quotation value':'Nilai sebutharga','Invoice value':'Nilai invois','Receipts collected':'Jumlah resit diterima','Purchase orders':'Pesanan belian','Project estimated gross profit':'Anggaran untung kasar projek','Company profile':'Profil syarikat','Data backup':'Sandaran data','Export backup':'Eksport sandaran','Import backup':'Import sandaran','Cloud account':'Akaun awan','Subtotal':'Jumlah kecil','Grand Total':'Jumlah keseluruhan','Internal estimated cost':'Anggaran kos dalaman','Estimated gross profit':'Anggaran untung kasar','Discount (RM)':'Diskaun (RM)','SST / Tax (RM)':'SST / Cukai (RM)','Description':'Penerangan','Qty':'Kuantiti','Open':'Buka',
 'Please enter customer / company name.':'Sila masukkan nama pelanggan / syarikat.','Please enter at least one work description.':'Sila masukkan sekurang-kurangnya satu penerangan kerja.','Please check quantity and price values.':'Sila semak kuantiti dan harga.','Quotation saved on this device.':'Sebutharga disimpan pada peranti ini.','Invoice saved on this device.':'Invois disimpan pada peranti ini.','Enter customer and a valid amount received.':'Masukkan pelanggan dan jumlah bayaran yang sah.','Receipt saved on this device.':'Resit disimpan pada peranti ini.','Complete supplier, description, quantity and price.':'Lengkapkan pembekal, penerangan, kuantiti dan harga.','Purchase order saved on this device.':'Pesanan belian disimpan pada peranti ini.','Enter customer name.':'Masukkan nama pelanggan.','Enter material description.':'Masukkan penerangan bahan.','Please choose a material first.':'Sila pilih bahan dahulu.','Enter project name.':'Masukkan nama projek.','Enter supplier name.':'Masukkan nama pembekal.','Enter employee name.':'Masukkan nama pekerja.','Clear this quotation form?':'Kosongkan borang sebutharga ini?','Backup imported.':'Sandaran berjaya diimport.','Import failed: ':'Import gagal: ','Open':'Buka','/day':'/hari'
 }};
+const originalTextNodes=new WeakMap();
+const originalAttrs=new WeakMap();
 function applyLanguage(lang){
  const d=dict[lang]||dict.en, extra=extraText[lang]||{};
- document.querySelectorAll('[data-t]').forEach(el=>{const k=el.dataset.t;if(d[k]&&el.textContent!==d[k])el.textContent=d[k]});
+ document.querySelectorAll('[data-t]').forEach(el=>{const k=el.dataset.t;if(d[k])el.textContent=d[k]});
  const map=Object.entries(extra).sort((a,b)=>b[0].length-a[0].length);
- const walk=root=>{const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode()){let s=n.nodeValue;for(const [a,b] of map)if(s.includes(a))s=s.split(a).join(b);n.nodeValue=s;}};
+ const walk=root=>{const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode()){if(!originalTextNodes.has(n))originalTextNodes.set(n,n.nodeValue);let value=originalTextNodes.get(n);for(const [a,b] of map)if(value.includes(a))value=value.split(a).join(b);if(n.nodeValue!==value)n.nodeValue=value;}};
  walk(document.body);
- document.querySelectorAll('input[placeholder],textarea[placeholder],button[aria-label],select[aria-label]').forEach(el=>{for(const [a,b] of map){if(el.placeholder)el.placeholder=el.placeholder.split(a).join(b);if(el.getAttribute('aria-label'))el.setAttribute('aria-label',el.getAttribute('aria-label').split(a).join(b));}});
+ document.querySelectorAll('input[placeholder],textarea[placeholder],button[aria-label],select[aria-label]').forEach(el=>{if(!originalAttrs.has(el))originalAttrs.set(el,{placeholder:el.getAttribute('placeholder'),aria:el.getAttribute('aria-label')});const original=originalAttrs.get(el);let ph=original.placeholder,aria=original.aria;for(const [a,b] of map){if(ph)ph=ph.split(a).join(b);if(aria)aria=aria.split(a).join(b);}if(ph!==null)el.setAttribute('placeholder',ph);if(aria!==null)el.setAttribute('aria-label',aria);});
  document.documentElement.lang=lang==='zh'?'zh-CN':lang==='ms'?'ms':'en';
 }
 let translating=false;
 const languageObserver=new MutationObserver(()=>{if(translating)return;translating=true;applyLanguage($('language').value);translating=false});
 languageObserver.observe(document.body,{childList:true,subtree:true});
-
-$('language').onchange=e=>applyLanguage(e.target.value);
+$('language').addEventListener('change',e=>applyLanguage(e.target.value));
+$('language').addEventListener('input',e=>applyLanguage(e.target.value));
 
 function seq(prefix,arr){return prefix+'-'+new Date().getFullYear()+'-'+String(arr.length+1).padStart(4,'0')}
 function renderReceipts(){const el=$('receiptList');if(!state.receipts.length){el.className='empty';el.textContent='No receipts yet.';return}el.className='';el.innerHTML=state.receipts.slice().reverse().map(x=>'<div class="totalrow"><span><b>'+safe(x.no)+'</b> · '+safe(x.customer)+'<br><small>'+safe(x.date)+' · '+safe(x.method)+'</small></span><b>'+money(x.amount)+'</b></div>').join('')}
