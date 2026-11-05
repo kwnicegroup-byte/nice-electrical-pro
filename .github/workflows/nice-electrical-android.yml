@@ -45,6 +45,8 @@ jobs:
 
       - name: Sync Android project
         run: npx cap sync android
+      - name: Install native Android print bridge
+        run: node install-native.js
 
       - name: Build debug APK
         run: |
