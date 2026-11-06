@@ -173,6 +173,6 @@ function renderContacts(){$('supplierList').innerHTML=state.suppliers.length?sta
 
 ensureStarterMaterials();renderMaterials();renderDashboard();renderInvoices();renderItems();$('qNo').value=nextNo();$('qDate').value=new Date().toISOString().slice(0,10);$('rNo').value=seq('RC',state.receipts);$('rDate').value=new Date().toISOString().slice(0,10);$('pNo').value=seq('PO',state.purchaseOrders);$('pDate').value=new Date().toISOString().slice(0,10);
 if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(reg=>reg.update()).catch(()=>{}));
-})();
 applyLanguage('en');
+})();
 </script></body></html>
