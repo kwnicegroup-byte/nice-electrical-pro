@@ -172,7 +172,7 @@ $('addEmployee').onclick=()=>{const name=$('employeeNew').value.trim();if(!name)
 function renderContacts(){$('supplierList').innerHTML=state.suppliers.length?state.suppliers.map(x=>'<div class="totalrow">'+safe(x.name)+' <span>'+safe(x.phone)+'</span></div>').join(''):'No suppliers yet.';$('employeeList').innerHTML=state.employees.length?state.employees.map(x=>'<div class="totalrow">'+safe(x.name)+' <span>'+money(x.wage)+'/day</span></div>').join(''):'No employees yet.'}
 
 ensureStarterMaterials();renderMaterials();renderDashboard();renderInvoices();renderItems();$('qNo').value=nextNo();$('qDate').value=new Date().toISOString().slice(0,10);$('rNo').value=seq('RC',state.receipts);$('rDate').value=new Date().toISOString().slice(0,10);$('pNo').value=seq('PO',state.purchaseOrders);$('pDate').value=new Date().toISOString().slice(0,10);
-if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(reg=>reg.update()).catch(()=>{}));
 })();
 applyLanguage('en');
 </script></body></html>
