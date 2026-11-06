@@ -152,9 +152,8 @@ function applyLanguage(lang){
  document.querySelectorAll('input[placeholder],textarea[placeholder],button[aria-label],select[aria-label]').forEach(el=>{if(!originalAttrs.has(el))originalAttrs.set(el,{placeholder:el.getAttribute('placeholder'),aria:el.getAttribute('aria-label')});const original=originalAttrs.get(el);let ph=original.placeholder,aria=original.aria;for(const [a,b] of map){if(ph)ph=ph.split(a).join(b);if(aria)aria=aria.split(a).join(b);}if(ph!==null)el.setAttribute('placeholder',ph);if(aria!==null)el.setAttribute('aria-label',aria);});
  document.documentElement.lang=lang==='zh'?'zh-CN':lang==='ms'?'ms':'en';
 }
-let translating=false;
-const languageObserver=new MutationObserver(()=>{if(translating)return;translating=true;applyLanguage($('language').value);translating=false});
-languageObserver.observe(document.body,{childList:true,subtree:true});
+// MutationObserver removed: applyLanguage() replaces text nodes and observing those
+// mutations caused a continuous observer loop that blocked all touch/click events.
 $('language').addEventListener('change',e=>applyLanguage(e.target.value));
 $('language').addEventListener('input',e=>applyLanguage(e.target.value));
 
