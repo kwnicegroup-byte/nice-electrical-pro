@@ -11,10 +11,10 @@
 <header class="top"><strong>NICE ELECTRICAL PRO V3</strong><small>Electrical Quotation & Business Management</small></header>
 <main class="wrap">
 <nav class="tabs" aria-label="Main navigation">
-<button class="tab active" data-page="home">Dashboard</button><button class="tab" data-page="quote">Quotation</button><button class="tab" data-page="records">Records</button><button class="tab" data-page="profile">Company Profile</button><button class="tab" data-page="backup">Backup</button>
+<button class="tab active" data-page="home">Dashboard</button><button class="tab" data-page="quote">Quotation</button><button class="tab" data-page="invoice">Invoice</button><button class="tab" data-page="records">Records</button><button class="tab" data-page="profile">Company Profile</button><button class="tab" data-page="backup">Backup</button>
 </nav>
 <section id="home" class="panel active">
-<div class="card"><h2>Dashboard</h2><div class="stats"><div class="stat">Saved quotations<b id="countQuotes">0</b></div><div class="stat">Quotation total<b id="sumQuotes">RM 0.00</b></div></div><div class="actions"><button class="btn" data-go="quote">＋ Create quotation</button><button class="btn secondary" data-go="profile">Edit company profile</button></div></div>
+<div class="card"><h2>Dashboard</h2><div class="stats"><div class="stat">Saved quotations<b id="countQuotes">0</b></div><div class="stat">Quotation total<b id="sumQuotes">RM 0.00</b></div></div><div class="actions"><button class="btn" data-go="quote">＋ Create quotation</button><button class="btn" data-go="invoice">＋ Create invoice</button><button class="btn secondary" data-go="profile">Edit company profile</button></div></div>
 <div class="card"><h2>Latest quotations</h2><div id="homeRecords" class="empty">No quotations saved.</div></div>
 </section>
 <section id="quote" class="panel">
@@ -31,6 +31,7 @@
 <div class="actions"><button class="btn" id="saveQuote">Save quotation</button><button class="btn secondary" id="newQuote">New quotation</button><button class="btn secondary" id="printQuote">Print / Save PDF</button></div>
 <p class="muted">Internal calculation is for reference. Check scope, quantities, tax treatment and supplier prices before issuing the quotation.</p></div>
 </section>
+<section id="invoice" class="panel"><div class="card" style="padding:0;overflow:hidden"><iframe title="NICE ELECTRICAL PRO Invoice" src="invoice.html" style="display:block;width:100%;height:1150px;border:0;background:#f2f5f9" loading="lazy" allow="clipboard-read; clipboard-write"></iframe></div></section>
 <section id="records" class="panel"><div class="card"><h2>Quotation records</h2><div id="recordsList" class="empty">No quotations saved.</div></div></section>
 <section id="profile" class="panel"><div class="card"><h2>Company Profile</h2><div class="grid">
 <div class="field full"><label for="company">Company name</label><input id="company" value="NICE ELECTRICAL & INDUSTRIAL"></div>
